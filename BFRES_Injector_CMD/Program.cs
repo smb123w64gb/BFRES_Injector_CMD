@@ -14,7 +14,7 @@ namespace BFRES_Injector_CMD
         {
             Console.WriteLine($"\n> BFRES Injector v2.0a\n" +
                                "> Made by SMB123W64GB\n" +
-                                "> Api by Syroot\n" +
+                                "> Using Syroot.NintenTools.Bfres API\n" +
                                 "> *.bfres *.obj\n");
 
             ResFile TargetBFRES = new ResFile(args[0]);
