@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Syroot.NintenTools.Bfres;
 using Syroot.NintenTools.Bfres.Helpers;
-using OpenTK;
 
 namespace BFRES_Injector_CMD
 {
@@ -177,7 +176,7 @@ namespace BFRES_Injector_CMD
                 //Time To Clean Our OBJ
                 foreach(SMesh sm in meshes)
                 {
-                    List<Vector3> points = new List<Vector3>();
+                    List<Syroot.Maths.Vector3> points = new List<Syroot.Maths.Vector3>();
                     Dictionary<string, uint> lookup = new Dictionary<string, uint>();
                     uint fi = 0;
                     foreach(List<string> faceRaw in sm.rawFace)
