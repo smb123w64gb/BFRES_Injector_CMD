@@ -40,12 +40,12 @@
       <HintPath>..\packages\Syroot.IO.BinaryData.2.0.1\lib\net45\Syroot.BinaryData.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Syroot.Maths, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Syroot.Maths.1.4.0\lib\net45\Syroot.Maths.dll</HintPath>
+    <Reference Include="Syroot.Maths, Version=1.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Syroot.Maths.1.5.0\lib\net45\Syroot.Maths.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Syroot.NintenTools.Bfres, Version=1.0.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Syroot.NintenTools.Bfres.1.0.1\lib\net45\Syroot.NintenTools.Bfres.dll</HintPath>
+    <Reference Include="Syroot.NintenTools.Bfres, Version=1.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Syroot.NintenTools.Bfres.1.2.0\lib\net45\Syroot.NintenTools.Bfres.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />

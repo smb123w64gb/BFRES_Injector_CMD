@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Syroot.NintenTools.Bfres;
+using Syroot.NintenTools.Bfres.Helpers;
 using OpenTK;
 
 namespace BFRES_Injector_CMD
@@ -20,7 +21,7 @@ namespace BFRES_Injector_CMD
             ResFile TargetBFRES = new ResFile(args[0]);
             MeshObj test = new MeshObj();
             test.ReadObj(args[1]);
-            test.InjectMesh(TargetBFRES.Models[0]);
+            test.InjectMesh(TargetBFRES.Models[0], TargetBFRES.ByteOrder);
             TargetBFRES.Models[0].Materials[0].RenderState.PolygonControl.CullBack = false;
             TargetBFRES.Models[0].Materials[0].RenderState.PolygonControl.CullFront = false;
             TargetBFRES.Models[0].Materials[0].RenderState.PolygonControl.PolygonModeEnabled = true;
@@ -33,25 +34,18 @@ namespace BFRES_Injector_CMD
 
         public class MeshObj
         {
-            public void InjectMesh(Model input)
+            public void InjectMesh(Model input,Syroot.BinaryData.ByteOrder BO)
             {
                 //Deal With Mesh
-                input.Shapes[0].Meshes[0].Format = Syroot.NintenTools.Bfres.GX2.GX2IndexFormat.UInt16;
-                input.Shapes[0].Radius = 100000000f;
+                uint[] theFaces = meshes[0].faces.ToArray();
+                input.Shapes[0].Meshes[0].SetIndices(theFaces,Syroot.NintenTools.Bfres.GX2.GX2IndexFormat.UInt32);
+                input.Shapes[0].Radius = 10000000000f;
                 FileOutput MeshByte = new FileOutput();
-                input.Shapes[0].Meshes[0].ElementCount = (uint)meshes[0].faces.Count;
-                foreach (Vector3 face in meshes[0].faces)
-                {
-                    MeshByte.writeShort((int)face.X);
-                    MeshByte.writeShort((int)face.Y);
-                    MeshByte.writeShort((int)face.Z);
-                }
                 input.Shapes[0].Meshes[0].IndexBuffer.Data[0] = MeshByte.save();
-                input.Shapes[0].Meshes[0].ElementCount = (uint)meshes[0].faces.Count*3;
                 input.Shapes[0].Meshes[0].SubMeshes.Clear();
                 Bounding LeeT = new Bounding();
                 LeeT.Center = new Syroot.Maths.Vector3F(0,0,0);
-                LeeT.Extent = new Syroot.Maths.Vector3F(100000000f, 100000000f, 100000000f);
+                LeeT.Extent = new Syroot.Maths.Vector3F(10000000000f, 10000000000f, 10000000000f);
                 for (int i = 0; i < input.Shapes[0].SubMeshBoundings.Count; i++) input.Shapes[0].SubMeshBoundings[i] = LeeT;
 
                 SubMesh Setup = new SubMesh();
@@ -60,46 +54,35 @@ namespace BFRES_Injector_CMD
                 for(int vvv = 0;vvv<4;vvv++) input.Shapes[0].Meshes[0].SubMeshes.Add(Setup);
                 input.Shapes[0].Name = meshes[0].Name;
                 //Deal with Vertexes
-                input.TotalVertexCount = (uint)meshes[0].verts.Count;
-                input.Shapes[0].VertexBuffer.VertexCount = (uint)meshes[0].verts.Count;
-                //Its no use input.Shapes[0].VertexBuffer.Attributes[1].Format = Syroot.NintenTools.Bfres.GX2.GX2AttribFormat.Format_8_8_8_8_SInt;
-                input.Shapes[0].VertexBuffer.Attributes[2].Format = Syroot.NintenTools.Bfres.GX2.GX2AttribFormat.Format_16_16_Single;
-                FileOutput VertByte = new FileOutput();
-                for (int i = 0;i < meshes[0].verts.Count;i++)
-                {
-                    VertByte.writeHalfFloat(meshes[0].verts[i].X);
-                    VertByte.writeHalfFloat(meshes[0].verts[i].Y);
-                    VertByte.writeHalfFloat(meshes[0].verts[i].Z);
-                    VertByte.writeHalfFloat(meshes[0].verts[i].W);
-
-                    VertByte.write10sNorm(meshes[0].norms[i]);
-
-
-                    VertByte.writeHalfFloat(meshes[0].uvs[i].X);
-                    VertByte.writeHalfFloat(meshes[0].uvs[i].Y*-1);
-
-
-                }
-                input.Shapes[0].VertexBuffer.Buffers[0].Data[0] = VertByte.save();
+                VertexBufferHelper helper = new VertexBufferHelper(input.VertexBuffers[0], BO);
+                VertexBufferHelperAttrib vertPos = helper["_p0"];
+                vertPos.Data = meshes[0].verts.ToArray();
+                vertPos.Format = Syroot.NintenTools.Bfres.GX2.GX2AttribFormat.Format_16_16_16_16_Single;
+                VertexBufferHelperAttrib vertUV = helper["_u0"];
+                vertUV.Data = meshes[0].uvs.ToArray();
+                vertUV.Format = Syroot.NintenTools.Bfres.GX2.GX2AttribFormat.Format_16_16_Single;
+                VertexBufferHelperAttrib vertNorm = helper["_n0"];
+                vertNorm.Data = meshes[0].norms.ToArray();
+                input.VertexBuffers[0] = helper.ToVertexBuffer();
 
                 }
             public class SMesh
             {
                 public string Name;
-                public List<Vector4> verts = new List<Vector4>();
+                public List<Syroot.Maths.Vector4F> verts = new List<Syroot.Maths.Vector4F>();
                 //Always make the last of the vec4 1.0 (idk what it is)
-                public List<Vector4> norms = new List<Vector4>();
+                public List<Syroot.Maths.Vector4F> norms = new List<Syroot.Maths.Vector4F>();
                 //Last of vec4 is 0 fornow
-                public List<Vector2> uvs = new List<Vector2>();
-                public List<Vector3> faces = new List<Vector3>();
+                public List<Syroot.Maths.Vector4F> uvs = new List<Syroot.Maths.Vector4F>();
+                public IList<uint> faces = new List<uint>();
                 public List<List<string>> rawFace = new List<List<string>>();
             }
             public List<SMesh> meshes = new List<SMesh>();
             public void ReadObj(string File)
             {
-                List<Vector4> verts = new List<Vector4>();
-                List<Vector4> norms = new List<Vector4>();
-                List<Vector2> uvs = new List<Vector2>();
+                List<Syroot.Maths.Vector4F> verts = new List<Syroot.Maths.Vector4F>();
+                List<Syroot.Maths.Vector4F> norms = new List<Syroot.Maths.Vector4F>();
+                List<Syroot.Maths.Vector4F> uvs = new List<Syroot.Maths.Vector4F>();
 
                 SMesh CMesh = new SMesh();
                 string[] text = System.IO.File.ReadAllLines(File);
@@ -115,17 +98,17 @@ namespace BFRES_Injector_CMD
                     if (l.Contains("v "))
                     {
                         string[] vertArry = l.Remove(0, 2).Split(' ');
-                        verts.Add(new Vector4(float.Parse(vertArry[0]), float.Parse(vertArry[1]), float.Parse(vertArry[2]),1.0f));
+                        verts.Add(new Syroot.Maths.Vector4F(float.Parse(vertArry[0]), float.Parse(vertArry[1]), float.Parse(vertArry[2]),1.0f));
                     }
                     if (l.Contains("vn "))
                     {
                         string[] vertArry = l.Remove(0, 3).Split(' ');
-                        norms.Add(new Vector4(float.Parse(vertArry[0]), float.Parse(vertArry[1]), float.Parse(vertArry[2]), 0.0f));
+                        norms.Add(new Syroot.Maths.Vector4F(float.Parse(vertArry[0]), float.Parse(vertArry[1]), float.Parse(vertArry[2]), 0.0f));
                     }
                     if (l.Contains("vt "))
                     {
                         string[] vertArry = l.Remove(0, 3).Split(' ');
-                        uvs.Add(new Vector2(float.Parse(vertArry[0]), float.Parse(vertArry[1])));
+                        uvs.Add(new Syroot.Maths.Vector4F(float.Parse(vertArry[0]), float.Parse(vertArry[1])*-1,0f,0f));
                     }
                     if (l.Contains("f "))
                     {
@@ -139,28 +122,26 @@ namespace BFRES_Injector_CMD
                 foreach(SMesh sm in meshes)
                 {
                     List<Vector3> points = new List<Vector3>();
-                    Dictionary<string, int> lookup = new Dictionary<string, int>();
-                    int fi = 0;
+                    Dictionary<string, uint> lookup = new Dictionary<string, uint>();
+                    uint fi = 0;
                     foreach(List<string> faceRaw in sm.rawFace)
                     {
-                        List<int> trueface = new List<int>();
                         foreach(string f in faceRaw)
                         {
                             if (!lookup.ContainsKey(f))
                             {
                                 lookup.Add(f, fi);
-                                trueface.Add(fi++);
+                                sm.faces.Add(fi++);
                                 string[] sr = f.Split('/');
                                 sm.verts.Add(verts[int.Parse(sr[0]) - 1]);
                                 sm.uvs.Add(uvs[int.Parse(sr[1]) - 1]);
                                 sm.norms.Add(norms[int.Parse(sr[2]) - 1]);
                             }
                             else
-                                trueface.Add(lookup[f]);
+                                sm.faces.Add(lookup[f]);
                             
 
                         }
-                        sm.faces.Add(new Vector3((float)trueface[0], (float)trueface[1], (float)trueface[2]));
                     }
                 }
 
