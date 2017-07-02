@@ -38,10 +38,10 @@ namespace BFRES_Injector_CMD
             {
                 //Deal With Mesh
                 uint[] theFaces = meshes[0].faces.ToArray();
-                input.Shapes[0].Meshes[0].SetIndices(theFaces,Syroot.NintenTools.Bfres.GX2.GX2IndexFormat.UInt32);
+                input.Shapes[0].Meshes[0].SetIndices(theFaces);
+                for (int i = 0; i < input.Shapes[0].Meshes.Count; i++) input.Shapes[0].Meshes.RemoveAt(1);
                 input.Shapes[0].Radius = 10000000000f;
-                FileOutput MeshByte = new FileOutput();
-                input.Shapes[0].Meshes[0].IndexBuffer.Data[0] = MeshByte.save();
+
                 input.Shapes[0].Meshes[0].SubMeshes.Clear();
                 Bounding LeeT = new Bounding();
                 LeeT.Center = new Syroot.Maths.Vector3F(0,0,0);
@@ -49,12 +49,21 @@ namespace BFRES_Injector_CMD
                 for (int i = 0; i < input.Shapes[0].SubMeshBoundings.Count; i++) input.Shapes[0].SubMeshBoundings[i] = LeeT;
 
                 SubMesh Setup = new SubMesh();
-                Setup.Count = (uint)meshes[0].faces.Count * 3;
+                Setup.Count = (uint)meshes[0].faces.Count;
                 Setup.Offset = 0;
                 for(int vvv = 0;vvv<4;vvv++) input.Shapes[0].Meshes[0].SubMeshes.Add(Setup);
-                input.Shapes[0].Name = meshes[0].Name;
+                //input.Shapes[0].Name = meshes[0].Name;
                 //Deal with Vertexes
                 VertexBufferHelper helper = new VertexBufferHelper(input.VertexBuffers[0], BO);
+                List<int> tests = new List<int>();
+                for(int i = 0; i < helper.Attributes.Count; i++)
+                {
+                    if (helper.Attributes[i].Name == "_t0" | helper.Attributes[i].Name == "_u1" | helper.Attributes[i].Name == "_u2")
+                        tests.Add(i);
+                }
+                tests.Reverse();
+                foreach (int i in tests) helper.Attributes.RemoveAt(i);
+
                 VertexBufferHelperAttrib vertPos = helper["_p0"];
                 vertPos.Data = meshes[0].verts.ToArray();
                 vertPos.Format = Syroot.NintenTools.Bfres.GX2.GX2AttribFormat.Format_16_16_16_16_Single;
